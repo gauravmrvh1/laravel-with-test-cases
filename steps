@@ -1,0 +1,177 @@
+
+
+
+composer create-project laravel/laravel example-app
+
+php artisan migrate
+
+php artisan db:seed
+
+
+php artisan make:test GauravTest
+php artisan make:test GauravTest --unit
+
+./vendor/bin/phpunit -v tests/Unit/StackTest.php 
+
+
+
+
+
+
+############################ To Clear Laravel storage logs ######################### 
+
+sudo truncate -s 0 storage/logs/laravel.log
+
+
+############################ Permissions ###########################################
+
+r = read , w =write, x = execute
+
+r = 4
+w = 2
+x = 1
+
+When all the permissions are available, the total weightage or value is
+4 + 2 + 1 = 7.
+
+So owner of msc (rwx) has permission weightage = 7
+Group permission for msc (r-x) has weightage = 5
+The permission for the rest is 1 (--x)
+Thus msc has the permission as 751
+
+########################################### ###########################################
+
+
+
+
+
+########################################### ###########################################
+
+
+
+
+
+
+
+########################################### ###########################################
+
+
+
+
+
+########################################### ###########################################
+
+
+
+
+########################################### ###########################################
+
+
+
+
+########################################### ###########################################
+
+
+
+
+
+########################################### ###########################################
+
+
+
+
+########################################### ###########################################
+
+
+        start : y-m-d H:i
+
+
+        endtime : start + 4hrs
+
+
+        #Total 4 Record
+
+        if: 
+            user enter gender 
+
+            - 1st 2 hr gender preferences ( if 4 data then return ) 
+                else if 1 available 
+                ( if no data avilabe, then in 4hrs female male )
+            
+            - else then return 3 from next 2 hrs
+                
+                and order 1st female 2nd male
+
+        else : 
+
+            order 1st female 2nd male
+
+
+########################################### ###########################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static $limit = 4;
+
+    /**
+     * @desc function to get doctor list
+     */
+    public function list1(DoctorListRequest $request)
+    {
+        try {
+
+            DB::enableQueryLog();
+
+            $query = Doctor::select(['id', 'dr_name', 'dr_gender']);
+
+            $query = $query
+                ->whereHas(
+                    'slots',
+                    function (Builder $query) use ($request) {
+                        $query->whereBetween('slots.slt_start_at', [$request->time_start, $request->time_end])
+                            ->whereBetween('slots.slt_end_at', [$request->time_start, $request->time_end])
+                            ->available();
+                    }
+                );
+
+            if ($request->has('gender')) {
+                $query = $query->limit(2);
+
+                $query1 = clone $query;
+
+                $male = $query->gender(1);
+
+                $female = $query1->gender(2);
+
+                $response = $male->union($female)->orderby('id', 'asc')->get();
+
+            } else {
+
+                $response = $query->limit(self::$limit)->orderBy('id', 'asc')->get();
+            }
+
+            // print_r(DB::getQueryLog());die;
+            return Helpers::prepareJsonResponse($response, Response::HTTP_OK);
+
+        } catch (Throwable $ex) {
+
+            throw $ex;
+        }
+    }
